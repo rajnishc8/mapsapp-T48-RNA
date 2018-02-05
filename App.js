@@ -1,8 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- * @flow
- */
 
 import React, { Component } from 'react';
 import {
@@ -15,9 +10,9 @@ import {
   View,
   Dimensions
 } from 'react-native';
-
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import Polyline from '@mapbox/polyline';
+import Callout from './Callout';
 
 let { width, height } = Dimensions.get('window');
 const SCREEN_HEIGHT =  height;
@@ -27,7 +22,6 @@ const LATITUDE = 59.32932349999999;
 const LONGITUDE = 18.068580800000063;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
-
 
 const instructions = Platform.select({
   ios: 'Press Cmd+R to reload,\n' +
@@ -53,13 +47,40 @@ export default class App extends Component<{}> {
       markerPosition: {
         latitude: LATITUDE,
         longitude: LONGITUDE
+      },
+      startPosition: {
+        latitude: 3.148561,
+        longitude: 101.652778
+      },
+      stopPosition: {
+        latitude: 3.149771,
+        longitude: 101.655449
+      },
+      disTimeVal:  {
+        distance: 0,
+        duration: 0 
+      },
+      markers: [{
+        title: 'hello',
+        coordinates: {
+          latitude: 3.148561,
+          longitude: 101.652778
+        },
+      },
+      {
+        title: 'hello',
+        coordinates: {
+          latitude: 3.149771,
+          longitude: 101.655449
+        },  
+      }]
       }
-    }
   }
+
+  watchID: ?number = null
 
   componentDidMount() {
     // find your origin and destination point coordinates and pass it to our method.
-    // I am using Bursa,TR -> Istanbul,TR for this example
     //this.getDirections("40.1884979, 29.061018", "41.0082,28.9784")
     //this.getDirections("Bhavnagar", "Pune")
     navigator.geolocation.getCurrentPosition(
@@ -91,9 +112,8 @@ export default class App extends Component<{}> {
         });
       }
     );
-
   }
-  
+
 
   componentWillUnmount() {
     navigator.geolocation.clearWatch(this.watchID);
@@ -101,7 +121,9 @@ export default class App extends Component<{}> {
   
   async getDirections(startLoc, destinationLoc) {
     try {
-        let resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${ startLoc }&destination=${ destinationLoc }`)
+      
+        let resp = await fetch(`https://api.detour88.hasura-app.io/directions?origin=${ startLoc }&destination=${ destinationLoc }`)
+        //let resp = await fetch(`https://maps.googleapis.com/maps/api/directions/json?origin=${ startLoc }&destination=${ destinationLoc }`)
         //let resp = await fetch(`https://api.dastardly26.hasura-app.io/directions?origin=Bhavnagar&destination=Ahmedabad`)
         //let resp = await fetch(`https://api.dastardly26.hasura-app.io/directions?origin=Bhavnagar&destination=Ahmedabad&departure_time=now`)
         
@@ -113,7 +135,35 @@ export default class App extends Component<{}> {
                 longitude : point[1]
             }
         })
+        
+        if (respJson.routes.length) {
+          const route = respJson.routes[0];
+          let newdisTimeVal = {
+            distance: route.legs.reduce((carry, curr) => {
+              return carry + curr.distance.value;
+            }, 0) / 1000,
+            duration: route.legs.reduce((carry, curr) => {
+              return carry + curr.duration.value;
+            }, 0) / 60
+          }        
+          
+          this.setState({disTimeVal: newdisTimeVal})
+          //alert(newdisTimeVal.distance)
+          //alert(newdisTimeVal.duration)          
+        }       
+
         this.setState({coords: coords})
+        this.setState({startPosition: this.state.coords[0]})
+        this.setState({stopPosition: this.state.coords[this.state.coords.length - 1]}) 
+        
+        let newRegion =  {
+          latitude: this.state.coords[0].latitude,
+          longitude: this.state.coords[0].longitude,
+          latitudeDelta: LATITUDE_DELTA,
+          longitudeDelta: LONGITUDE_DELTA
+        }        
+        this.setState({region: newRegion})
+        
         return coords
     } catch(error) {
         alert(error)
@@ -132,15 +182,15 @@ direction = () => {
   //this.getDirections("Bhavnagar", "Pune")
   //this.getDirections("Bhavnagar", "Delhi")
   //this.getDirections(String(this.state.source), String(this.state.destination))
-  this.getDirections(source, destination)
-
+  this.getDirections(source, destination) 
    
 }
-
+ 
   render() {
     return (
       <View style={styles.containerWorking}>
         <MapView style={styles.map}
+         showsUserLocation={ true }
          region={ this.state.region }
         >
           <MapView.Marker
@@ -148,13 +198,30 @@ direction = () => {
             title={'My place'}
             description={'I am here now'}
           />
+          <MapView.Marker
+          coordinate={ this.state.startPosition }
+            title={'Start'}
+            description={'From here'}            
+            pinColor={'#009688'}
+          />
+            
+          <MapView.Marker
+            coordinate={ this.state.stopPosition }
+            calloutOffset={{ x: -8, y: 28 }}
+            calloutAnchor={{ x: 0.5, y: 0.4 }}
+          >
+            <Callout tooltip style={styles.customView} 
+            distance = {this.state.disTimeVal.distance}
+            duration = {this.state.disTimeVal.duration}
+            >              
+            </Callout>
+          </MapView.Marker>     
+          
 
           <MapView.Polyline 
             coordinates={this.state.coords}
             strokeWidth={2}
-            strokeColor="red"/>
-
-          
+            strokeColor="red"/>          
 
         </MapView>
         <TextInput 
@@ -182,7 +249,7 @@ direction = () => {
        <TouchableOpacity style={styles.btn} onPress = {this.direction} >
                <Text>Direction</Text>
         </TouchableOpacity>   
-    
+        
       </View>
     );
   }
@@ -220,6 +287,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
+  customView: {
+    width: 140,
+    height: 100,
+  },
+  plainView: {
+    width: 60,
+  },
   marker: {
     height: 20,
     height: 20,
@@ -245,6 +319,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     textAlign: 'center',
     margin: 10,
+  },
+  callout: {
+    width: 140,
   },
   instructions: {
     textAlign: 'center',
