@@ -5,9 +5,7 @@ This app is react-native app.
 Directions app using [`react-native-maps`](https://github.com/airbnb/react-native-maps/) – Draw a route between two coordinates, powered by the Google Maps Directions API.
 Display's Time and duration to destination.
 
-![react-native-maps-directions](https://photos.google.com/share/AF1QipM6wRrvV1KrdET-klMAgUziYzjaIWMgxIXxQE-vZM3572gedXon_nEt64Hd_D8e3A/photo/AF1QipPBCnEkfjsT_nMqpA2lMIDW2zSbp4szNXlMBabL?key=cEFFdVF4LXM5MXVNR1lNTkxwOF9SR0s4dVNKd0hR)
-
-https://photos.google.com/share/AF1QipM6wRrvV1KrdET-klMAgUziYzjaIWMgxIXxQE-vZM3572gedXon_nEt64Hd_D8e3A?key=cEFFdVF4LXM5MXVNR1lNTkxwOF9SR0s4dVNKd0hR
+![react-native-maps-directions](https://github.com/rajnishc8/mapsapp-T48-RNA/blob/master/images/Screenshot_1.jpg)
 
 ## To test this out
 
